@@ -151,7 +151,13 @@ public class ShipmentService {
 	}
 
 	
-	public List<ShipmentResponse> searchShipment(Long customerId, ShipmentStatus status, String trackingNo) {
+	public List<ShipmentResponse> searchShipment(
+			Long customerId,
+			ShipmentStatus status,
+			String trackingNo,
+			LocalDateTime createdFromDate,
+			LocalDateTime createdTo)
+	{
 
 		List<Specification<Shipment>> specification = new ArrayList<>();
 
@@ -164,7 +170,12 @@ public class ShipmentService {
 		if (trackingNo != null && !trackingNo.isBlank())
 			specification.add(ShipmentSpecification.hasTrackingNumber(trackingNo));
 
-		
+		if(createdFromDate!=null) 
+		    specification.add(ShipmentSpecification.createdFromGreaterThenOrEqual(createdFromDate));
+	
+		if(createdTo!=null) 
+		    specification.add(ShipmentSpecification.createdToLessThenOrEqualTo(createdTo));
+	
 		
 		
 		

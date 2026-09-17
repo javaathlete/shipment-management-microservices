@@ -1,5 +1,6 @@
 package com.shipment.shipmentservice.controller;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,8 @@ import com.shipment.shipmentservice.service.ShipmentService;
 
 import jakarta.validation.Valid;
 
-@RestController @RequestMapping("/api/v1/shipments")
+@RestController
+@RequestMapping("/api/v1/shipments")
 public class ShipmentController {
 
 	private final ShipmentService shipmentService;
@@ -35,14 +37,14 @@ public class ShipmentController {
 	@PostMapping
 	public ResponseEntity<ShipmentResponse> createShipment(
 			@Valid @RequestBody CreateShipmentRequest createShipmentRequest) {
-		System.out.println("Enter into createShipment method...");
+
 		ShipmentResponse shipmentResponse = shipmentService.createShipment(createShipmentRequest);
 		return ResponseEntity.status(HttpStatus.CREATED).body(shipmentResponse);
-
 	}
 
 	@GetMapping("/{shipmentId}")
 	public ResponseEntity<ShipmentResponse> getShipmentBySpecifiedId(@PathVariable Long shipmentId) {
+
 		ShipmentResponse response = shipmentService.getShipmentById(shipmentId);
 		return ResponseEntity.ok(response);
 	}
@@ -50,8 +52,8 @@ public class ShipmentController {
 	@PostMapping("/savebulkrecords")
 	public ResponseEntity<List<ShipmentResponse>> createBulkResources(
 			@RequestBody List<CreateShipmentRequest> bulkRequest) {
-		List<ShipmentResponse> records = shipmentService.createBulkRecords(bulkRequest);
 
+		List<ShipmentResponse> records = shipmentService.createBulkRecords(bulkRequest);
 		return ResponseEntity.status(HttpStatus.CREATED).body(records);
 	}
 
@@ -73,42 +75,38 @@ public class ShipmentController {
 	@PatchMapping("/{shipmentId}/cancle")
 	public ResponseEntity<ShipmentResponse> cancleShipment(@PathVariable Long shipmentId) {
 		ShipmentResponse shipmentResponse = shipmentService.cancleShipment(shipmentId);
-
 		return ResponseEntity.ok(shipmentResponse);
-
 	}
 
 	@PutMapping("/{shipmentId}")
 	public ResponseEntity<ShipmentResponse> updateShipment(@PathVariable Long shipmentId,
 			@Valid @RequestBody UpdateShipmentRequest updateShipmentRequest) {
+
 		ShipmentResponse response = shipmentService.updateShipment(shipmentId, updateShipmentRequest);
 		return ResponseEntity.ok(response);
-
 	}
 
 	@GetMapping(params = "status")
 	public ResponseEntity<List<ShipmentResponse>> getShipmentsByStatus(@RequestParam ShipmentStatus status) {
+
 		List<ShipmentResponse> response = shipmentService.searchShipmentByStatus(status);
 		return ResponseEntity.ok(response);
-
 	}
 
 	@GetMapping(params = "customerId")
 	public ResponseEntity<List<ShipmentResponse>> getShipmentsByCustomerId(@RequestParam Long customerId) {
 
 		List<ShipmentResponse> shipments = shipmentService.findCustomerById(customerId);
-
 		return ResponseEntity.ok(shipments);
 	}
 
 	@GetMapping("/search")
-	public ResponseEntity<List<ShipmentResponse>> searchShipment(
-			@RequestParam(required = false) Long customerId,
-			@RequestParam(required = false) ShipmentStatus status,
-			@RequestParam(required = false) String trackingNo) 
-	{
-		
-		List<ShipmentResponse> response = shipmentService.searchShipment(customerId, status,trackingNo);
+	public ResponseEntity<List<ShipmentResponse>> searchShipment(@RequestParam(required = false) Long customerId,
+			@RequestParam(required = false) ShipmentStatus status, @RequestParam(required = false) String trackingNo,
+			@RequestParam(required = false) LocalDateTime createdFrom,
+			@RequestParam(required = false) LocalDateTime createdTo) {
+
+		List<ShipmentResponse> response = shipmentService.searchShipment(customerId, status, trackingNo, createdFrom,createdTo);
 		return ResponseEntity.ok().body(response);
 	}
 }

@@ -32,8 +32,12 @@ public class ShipmentSpecification {
 		return (root,query,criteriaBuilder)->criteriaBuilder.equal(root.get("trackingNumber"), trackingNo);
 	}
 	
-	public static Specification<Shipment> createdAtGreaterThenOrEqual(LocalDateTime createdAtDate) {
-		return (root,query,criteriaBuilder)->criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), createdAtDate);
+	public static Specification<Shipment> createdFromGreaterThenOrEqual(LocalDateTime createdFrom) {
+		return (root,query,criteriaBuilder)->criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), createdFrom);
+	}
+	
+	public static Specification<Shipment> createdToLessThenOrEqualTo(LocalDateTime createdTo) {
+		return (root,query,criteriaBuilder)->criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), createdTo);
 	}
 }
 
