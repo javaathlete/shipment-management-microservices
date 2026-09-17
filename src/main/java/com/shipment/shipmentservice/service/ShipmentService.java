@@ -115,7 +115,6 @@ public class ShipmentService {
 		shipment.setShipmentStatus(ShipmentStatus.CANCELLED);
 		shipment.setUpdatedAt(LocalDateTime.now());
 		Shipment shipmentCancled = shipmentRepository.save(shipment);
-		System.out.println(shipmentCancled.getShipmentStatus());
 
 		return mapToResponse(shipmentCancled);
 	}
@@ -151,26 +150,27 @@ public class ShipmentService {
 		return shipmentRepository.findByCustomerId(custId).stream().map(this::mapToResponse).toList();
 	}
 
+	
 	public List<ShipmentResponse> searchShipment(Long customerId, ShipmentStatus status, String trackingNo) {
-
-		
 
 		List<Specification<Shipment>> specification = new ArrayList<>();
 
-		if (customerId != null) 
+		if (customerId != null)
 			specification.add(ShipmentSpecification.hasCustomerId(customerId));
 
-		if (status != null) 
+		if (status != null)
 			specification.add(ShipmentSpecification.hasStatus(status));
-			
-		if (trackingNo != null && !trackingNo.isBlank()) 
+
+		if (trackingNo != null && !trackingNo.isBlank())
 			specification.add(ShipmentSpecification.hasTrackingNumber(trackingNo));
-			
-			
-		Specification<Shipment> specifications = Specification.allOf(specification);
+
 		
-			
-			return shipmentRepository.findAll(specifications).stream().map(this::mapToResponse).toList();
+		
+		
+		
+		
+		Specification<Shipment> specifications = Specification.allOf(specification);
+		return shipmentRepository.findAll(specifications).stream().map(this::mapToResponse).toList();
 
 	}
 
