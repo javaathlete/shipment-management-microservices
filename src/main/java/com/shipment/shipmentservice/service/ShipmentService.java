@@ -16,11 +16,13 @@ import com.shipment.shipmentservice.dto.ShipmentResponse;
 import com.shipment.shipmentservice.dto.UpdateShipmentRequest;
 import com.shipment.shipmentservice.entity.Shipment;
 import com.shipment.shipmentservice.entity.ShipmentStatus;
+import com.shipment.shipmentservice.entity.ShipmentStatusHistory;
 import com.shipment.shipmentservice.exception.InvalidShipmentStatusTransitionException;
 import com.shipment.shipmentservice.exception.ShipmentCancletionException;
 import com.shipment.shipmentservice.exception.ShipmentIdNotFoundException;
 import com.shipment.shipmentservice.exception.ShipmentNotFoundException;
 import com.shipment.shipmentservice.repository.ShipmentRepository;
+import com.shipment.shipmentservice.repository.ShipmentStatusHistoryRepository;
 import com.shipment.shipmentservice.specification.ShipmentSpecification;
 import com.shipment.shipmentservice.util.ShipmentNumberTrackingGenerator;
 
@@ -31,38 +33,38 @@ public class ShipmentService {
 
 	private final ShipmentRepository shipmentRepository;
 	private final ShipmentNumberTrackingGenerator shipmentNumberTrackingGenerator;
+	private final ShipmentStatusHistoryRepository historyRepository;
 
 	public ShipmentService(ShipmentRepository shipmentRepository,
-			ShipmentNumberTrackingGenerator shipmentNumberTrackingGenerator) {
+			ShipmentNumberTrackingGenerator shipmentNumberTrackingGenerator,
+			ShipmentStatusHistoryRepository historyRepository) {
 		this.shipmentRepository = shipmentRepository;
 		this.shipmentNumberTrackingGenerator = shipmentNumberTrackingGenerator;
+		this.historyRepository = historyRepository;
 	}
 
 	@Transactional
 	public ShipmentResponse createShipment(CreateShipmentRequest request) {
 
-		Shipment shipment = new Shipment();
+		Shipment shipment = createShipmentEntites(request);
+	    Shipment shipmentRecords = shipmentRepository.save(shipment);// save in shipment table
+	    
+	    ShipmentStatusHistory shipmentStatusHistory = saveShipmentStatusHistory(shipmentRecords);
+	    
+	   historyRepository.save(shipmentStatusHistory);// save in shipment History table
 
-		shipment.setCustomerId(request.getCustomerId());
-		shipment.setTrackingNumber(shipmentNumberTrackingGenerator.generateTrackingNumber());
-		shipment.setSenderName(request.getSenderName());
-		shipment.setSenderPhone(request.getSenderPhone());
-		shipment.setReceiverName(request.getReceiverName());
-		shipment.setReceiverPhone(request.getReceiverPhone());
-		shipment.setPickupAddress(request.getPickupAddress());
-		shipment.setDeliveryAddress(request.getDeliveryAddress());
-		shipment.setPackageWeight(request.getPackageWeight());
-		shipment.setPackageDescription(request.getPackageDescription());
+		return mapToResponse(shipmentRecords);
 
-		shipment.setShipmentStatus(ShipmentStatus.CREATED);
+	}
 
-		LocalDateTime now = LocalDateTime.now();
-		shipment.setCreatedAt(now);
-		shipment.setUpdatedAt(now);
-
-		shipmentRepository.save(shipment);
-
-		return mapToResponse(shipment);
+	private ShipmentStatusHistory saveShipmentStatusHistory(Shipment shipmentRecords) {
+		ShipmentStatusHistory shipmentStatusHistory = new ShipmentStatusHistory();
+		
+		shipmentStatusHistory.setShipment(shipmentRecords);
+		shipmentStatusHistory.setOldStatus(null);
+		shipmentStatusHistory.setNewStatus(ShipmentStatus.CREATED);
+		shipmentStatusHistory.setChangedAt(LocalDateTime.now());
+		return shipmentStatusHistory;
 	}
 
 	public ShipmentResponse getShipmentById(Long shipmentId) {
@@ -74,7 +76,7 @@ public class ShipmentService {
 	@Transactional
 	public List<ShipmentResponse> createBulkRecords(List<CreateShipmentRequest> bulkRequest) {
 
-		List<Shipment> shipment = bulkRequest.stream().map(this::createShipmentEntites).toList();
+		List<Shipment> shipment = bulkRequest.stream().map(this::createBulkShipmentEntites).toList();
 
 		List<Shipment> shipRecords = shipmentRepository.saveAll(shipment);
 
@@ -152,15 +154,8 @@ public class ShipmentService {
 		return shipmentRepository.findByCustomerId(custId).stream().map(this::mapToResponse).toList();
 	}
 
-	
-	public List<ShipmentResponse> searchShipment(
-			Long customerId,
-			ShipmentStatus status,
-			String trackingNo,
-			LocalDateTime createdFromDate,
-			LocalDateTime createdTo,
-			String senderName)
-	{
+	public List<ShipmentResponse> searchShipment(Long customerId, ShipmentStatus status, String trackingNo,
+			LocalDateTime createdFromDate, LocalDateTime createdTo, String senderName) {
 
 		List<Specification<Shipment>> specification = new ArrayList<>();
 
@@ -173,48 +168,27 @@ public class ShipmentService {
 		if (trackingNo != null && !trackingNo.isBlank())
 			specification.add(ShipmentSpecification.hasTrackingNumber(trackingNo));
 
-		if(createdFromDate!=null) 
-		    specification.add(ShipmentSpecification.createdFromGreaterThenOrEqual(createdFromDate));
-	
-		if(createdTo!=null) 
-		    specification.add(ShipmentSpecification.createdToLessThenOrEqualTo(createdTo));
-		
-		if(senderName!=null && !senderName.isBlank()) 
+		if (createdFromDate != null)
+			specification.add(ShipmentSpecification.createdFromGreaterThenOrEqual(createdFromDate));
+
+		if (createdTo != null)
+			specification.add(ShipmentSpecification.createdToLessThenOrEqualTo(createdTo));
+
+		if (senderName != null && !senderName.isBlank())
 			specification.add(ShipmentSpecification.searchLikeUserName(senderName));
-		
+
 		Specification<Shipment> specifications = Specification.allOf(specification);
 		return shipmentRepository.findAll(specifications).stream().map(this::mapToResponse).toList();
 
 	}
 
 	public Page<ShipmentResponse> getAllShipmentPageWise(int page, int size) {
-		
+
 		Pageable pageable = PageRequest.of(page, size);
 		Page<Shipment> pageResponse = shipmentRepository.findAll(pageable);
-		
 		return pageResponse.map(this::mapToResponse);
-		
-		
-		
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
 	private void validateShipmentStatus(ShipmentStatus existingShipmentStatus, ShipmentStatus newStatus) {
 
 		switch (existingShipmentStatus) {
@@ -291,7 +265,7 @@ public class ShipmentService {
 		return response;
 	}
 
-	private Shipment createShipmentEntites(CreateShipmentRequest request) {
+	private Shipment createBulkShipmentEntites(CreateShipmentRequest request) {
 
 		Shipment shipment = new Shipment();
 
@@ -320,14 +294,37 @@ public class ShipmentService {
 	}
 
 	public List<ShipmentResponse> dateTimeLike(String yyyyddmm) {
-		
+
 		List<Specification<Shipment>> searchList = new ArrayList<>();
-		
-		if(yyyyddmm!=null) 
+
+		if (yyyyddmm != null)
 			searchList.add(ShipmentSpecification.searchLikeOnlyDateInyyyyMMddFormat(yyyyddmm));
-		
+
 		Specification<Shipment> shipSpecifications = Specification.allOf(searchList);
 		return shipmentRepository.findAll(shipSpecifications).stream().map(this::mapToResponse).toList();
+	}
+
+	private Shipment createShipmentEntites(CreateShipmentRequest request) {
+		Shipment shipment = new Shipment();
+
+		shipment.setCustomerId(request.getCustomerId());
+		shipment.setTrackingNumber(shipmentNumberTrackingGenerator.generateTrackingNumber());
+		shipment.setSenderName(request.getSenderName());
+		shipment.setSenderPhone(request.getSenderPhone());
+		shipment.setReceiverName(request.getReceiverName());
+		shipment.setReceiverPhone(request.getReceiverPhone());
+		shipment.setPickupAddress(request.getPickupAddress());
+		shipment.setDeliveryAddress(request.getDeliveryAddress());
+		shipment.setPackageWeight(request.getPackageWeight());
+		shipment.setPackageDescription(request.getPackageDescription());
+
+		shipment.setShipmentStatus(ShipmentStatus.CREATED);
+
+		LocalDateTime now = LocalDateTime.now();
+		shipment.setCreatedAt(now);
+		shipment.setUpdatedAt(now);
+		return shipment;
+
 	}
 
 }
