@@ -156,7 +156,8 @@ public class ShipmentService {
 			ShipmentStatus status,
 			String trackingNo,
 			LocalDateTime createdFromDate,
-			LocalDateTime createdTo)
+			LocalDateTime createdTo,
+			String senderName)
 	{
 
 		List<Specification<Shipment>> specification = new ArrayList<>();
@@ -175,7 +176,10 @@ public class ShipmentService {
 	
 		if(createdTo!=null) 
 		    specification.add(ShipmentSpecification.createdToLessThenOrEqualTo(createdTo));
-	
+		
+		if(senderName!=null && !senderName.isBlank()) 
+			specification.add(ShipmentSpecification.searchLikeUserName(senderName));
+		
 		
 		
 		
@@ -287,6 +291,17 @@ public class ShipmentService {
 		shipment.setTrackingNumber(shipmentNumberTrackingGenerator.generateTrackingNumber());
 
 		return shipment;
+	}
+
+	public List<ShipmentResponse> dateTimeLike(String yyyyddmm) {
+		
+		List<Specification<Shipment>> searchList = new ArrayList<>();
+		
+		if(yyyyddmm!=null) 
+			searchList.add(ShipmentSpecification.searchLikeOnlyDateInyyyyMMddFormat(yyyyddmm));
+		
+		Specification<Shipment> shipSpecifications = Specification.allOf(searchList);
+		return shipmentRepository.findAll(shipSpecifications).stream().map(this::mapToResponse).toList();
 	}
 
 }

@@ -16,17 +16,6 @@ public class ShipmentSpecification {
 	public static Specification<Shipment> hasStatus(ShipmentStatus status) {
 		return (root,query,criteriaBuilder)->criteriaBuilder.equal(root.get("shipmentStatus"), status);
 	}
-
-
-
-/* This is equivalant to 
-     
-      return (Root<Shipment> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) ->  criteriaBuilder.equal(
-                root.get("customerId"), customerId );
-
-*/
-
-	
 	
 	public static Specification<Shipment> hasTrackingNumber(String trackingNo) {
 		return (root,query,criteriaBuilder)->criteriaBuilder.equal(root.get("trackingNumber"), trackingNo);
@@ -38,6 +27,13 @@ public class ShipmentSpecification {
 	
 	public static Specification<Shipment> createdToLessThenOrEqualTo(LocalDateTime createdTo) {
 		return (root,query,criteriaBuilder)->criteriaBuilder.lessThanOrEqualTo(root.get("createdAt"), createdTo);
+	}
+	
+	public static Specification<Shipment>searchLikeOnlyDateInyyyyMMddFormat(String trackingNo) {
+		return (root,query,criteriaBuilder)->criteriaBuilder.like(root.get("trackingNumber"), "%"+trackingNo+"%");
+	}
+	public static Specification<Shipment>searchLikeUserName(String uName) {
+		return (root,query,criteriaBuilder)->criteriaBuilder.like(criteriaBuilder.lower(root.get("senderName")),"%" +uName.toLowerCase()+"%");
 	}
 }
 

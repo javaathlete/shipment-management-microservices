@@ -104,9 +104,18 @@ public class ShipmentController {
 	public ResponseEntity<List<ShipmentResponse>> searchShipment(@RequestParam(required = false) Long customerId,
 			@RequestParam(required = false) ShipmentStatus status, @RequestParam(required = false) String trackingNo,
 			@RequestParam(required = false) LocalDateTime createdFrom,
-			@RequestParam(required = false) LocalDateTime createdTo) {
+			@RequestParam(required = false) LocalDateTime createdTo,
+			@RequestParam(required = false) String senderName) {
 
-		List<ShipmentResponse> response = shipmentService.searchShipment(customerId, status, trackingNo, createdFrom,createdTo);
+		List<ShipmentResponse> response = shipmentService.searchShipment(customerId, status, trackingNo, createdFrom,
+				createdTo,senderName);
 		return ResponseEntity.ok().body(response);
+	}
+
+	@GetMapping("/searchLike")
+	public ResponseEntity<List<ShipmentResponse>> searchShipmentLike(
+			@RequestParam(required = false) String datePattern) {
+		List<ShipmentResponse> responses = shipmentService.dateTimeLike(datePattern);
+		return ResponseEntity.ok().body(responses);
 	}
 }
