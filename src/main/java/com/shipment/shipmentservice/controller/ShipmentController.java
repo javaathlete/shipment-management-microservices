@@ -3,6 +3,7 @@ package com.shipment.shipmentservice.controller;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -108,7 +109,7 @@ public class ShipmentController {
 			@RequestParam(required = false) String senderName) {
 
 		List<ShipmentResponse> response = shipmentService.searchShipment(customerId, status, trackingNo, createdFrom,
-				createdTo,senderName);
+				createdTo, senderName);
 		return ResponseEntity.ok().body(response);
 	}
 
@@ -117,5 +118,15 @@ public class ShipmentController {
 			@RequestParam(required = false) String datePattern) {
 		List<ShipmentResponse> responses = shipmentService.dateTimeLike(datePattern);
 		return ResponseEntity.ok().body(responses);
+	}
+
+	@GetMapping("/pageable")
+	public ResponseEntity<Page<ShipmentResponse>> getAllShipmentsPageByPage(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size)
+	{
+		Page<ShipmentResponse> respoPage = shipmentService.getAllShipmentPageWise(page, size);
+		return ResponseEntity.ok().body(respoPage);
+
 	}
 }

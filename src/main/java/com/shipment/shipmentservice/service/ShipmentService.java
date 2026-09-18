@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -180,15 +182,39 @@ public class ShipmentService {
 		if(senderName!=null && !senderName.isBlank()) 
 			specification.add(ShipmentSpecification.searchLikeUserName(senderName));
 		
-		
-		
-		
-		
 		Specification<Shipment> specifications = Specification.allOf(specification);
 		return shipmentRepository.findAll(specifications).stream().map(this::mapToResponse).toList();
 
 	}
 
+	public Page<ShipmentResponse> getAllShipmentPageWise(int page, int size) {
+		
+		Pageable pageable = PageRequest.of(page, size);
+		Page<Shipment> pageResponse = shipmentRepository.findAll(pageable);
+		
+		return pageResponse.map(this::mapToResponse);
+		
+		
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	private void validateShipmentStatus(ShipmentStatus existingShipmentStatus, ShipmentStatus newStatus) {
 
 		switch (existingShipmentStatus) {
